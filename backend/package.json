@@ -1,0 +1,9 @@
+{
+    "name": "tic-tac-toe-backend",
+    "version": "0.1.0",
+    "description": "Tic Tac Toe Backend",
+    "dependencies": {
+        "express": "^4.17.1",
+        "socket.io": "^3.0.4"
+    }
+}

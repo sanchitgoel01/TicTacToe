@@ -1,0 +1,17 @@
+Protocol Design:
+
+CLIENT PROTOCOL:
+
+    Incoming:
+        - Invalid Code: Recieved if the game code is invalid or there are already two people.
+        - Joined Game: Recieved when the server acknowledges that a client joined a game. Contains gamecode and numPlayers
+        - Fill-Cell: Recieved when the other player clicks a cell. Contains Row/Col pos, and mark (X or O).
+        - End-Game: Recieved when the game is over. Contains data: 0, 1, 2, 3 representing Left Match, X Win, O Win, and Draw respectively.
+        - Set-Turn: Recieved at the start when a socket connection is made. Contains turn which is either X or O
+        - Enable-Turn: Recieved when a player can select their mark.
+
+    Outgoing:
+        Cell-Clicked: Triggered when a cell is clicked client side. Sends Row/Col pos of the cell that was clicked.
+        New-Game: Triggered when a client wants to create a new game.
+        Join-Game: Triggered when a client wants to join a game.
+        Fetch-Board: Triggered when a client wants to fetch the board.

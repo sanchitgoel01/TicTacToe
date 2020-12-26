@@ -1,0 +1,2 @@
+- Handle disconnections and reconnections properly.
+- Cleanup formatting
