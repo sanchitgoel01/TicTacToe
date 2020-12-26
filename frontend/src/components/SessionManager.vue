@@ -25,8 +25,9 @@
       <p v-if="error != ''">Error: {{ error }}</p>
     </div>
     <div v-else class="flex container stack mx-auto w-25p">
-      <h3>Game Code: {{ gameCode }}</h3>
+      <h3>Game Code: {{ gameCode.toUpperCase() }}</h3>
       <h3>Waiting for another player to join...</h3>
+      <button class="h-3rm" @click="onCancelGameClck()">Cancel Game</button>
     </div>
   </div>
 </template>
@@ -47,20 +48,21 @@ export default {
   emits: ["enter-game"],
   created() {
     this.socket.on("joined-game", (data) => {
-      console.log("A client joined the game!");
-      console.log("Game Code:" + data.gameCode);
+      if (data.error) {
+        this.error = data.error;
+        return;
+      }
+
+      console.log("A client joined the game!"); // FIXME DEBUG
+      console.log("Game Code:" + data.gameCode); // FIXME DEBUG
       this.gameCodeInput = "";
       this.gameCode = data.gameCode;
       if (data.numPlayers < 1) {
         this.isWaiting = true;
       } else {
         this.socket.removeAllListeners("joined-game");
-        this.$emit("enter-game", gameCode);
+        this.$emit("enter-game", this.gameCode);
       }
-    });
-
-    this.socket.on("invalid-code", (error) => {
-      this.error = error;
     });
   },
   methods: {
@@ -74,6 +76,13 @@ export default {
       if (this.gameCodeInput.length == 0) return;
 
       this.socket.emit("join-game", this.gameCodeInput.toLowerCase());
+    },
+    onCancelGameClck() {
+      // Tell server to cancel new game
+      this.socket.emit('cancel-creation', this.gameCode);
+      // Reset game code and waiting state.
+      this.gameCode = "";
+      this.isWaiting = false;
     },
   },
 };

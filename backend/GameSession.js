@@ -15,7 +15,11 @@ class GameSession {
         if (numConnections == 2)
             return;
 
-        const playerNum = numConnections + 1;
+        const playerNum = this._getUnsetPlayerNum();
+
+        // Invalid Player Num
+        if (playerNum == 0)
+            return;
 
         this._setPlayer(playerNum, socket);
 
@@ -24,17 +28,21 @@ class GameSession {
 
         this._initSocketListeners(socket, cTurn, playerNum);
 
-        // Two connections. Allow player 1 to start selecting!
+        // Two connections. Allow player to start selecting.
         if (numConnections == 1) {
-            this.#player1.emit('enable-turn');
+            const currTurn = this.#gameBoard.currentTurn;
+            if (currTurn == 'X')
+                this.#player1.emit('enable-turn');
+            else
+                this.#player2.emit('enable-turn');
         }
     }
 
     // playerNum is either 1 for player1 or 2 for player2.
     _initSocketListeners(socket, cTurn, playerNum) {
+        // Called when a client clicks on a cell on the board.
         socket.on('cell-clicked', (data) => {
-            // FIXME DEBUG
-            console.log("Recieved Cell Clicked!");
+            console.log("Recieved Cell Clicked!"); // FIXME DEBUG
 
             // Validate click
             if (this.#gameBoard.isGameOver || this.#gameBoard.currentTurn != cTurn) {
@@ -45,31 +53,65 @@ class GameSession {
             const row = data.row;
             const col = data.col;
 
-            console.log("Cell Pos Row: " + row + ". Col: " + col);
+            console.log("Cell Pos Row: " + row + ". Col: " + col); // FIXME DEBUG
             const otherSocket = playerNum == 1 ? this.#player2 : this.#player1; // If client turn is 1, we want 2 socket.
 
             this.#gameBoard.cellClicked(row, col);
-            otherSocket.emit('fill-cell', { row, col });
+            if (otherSocket)
+                otherSocket.emit('fill-cell', { row, col, mark: cTurn });
 
             if (this.#gameBoard.isGameOver) {
                 const win = this.#gameBoard.rawWin;
-                console.log("Game Over! Result: " + win);
+                console.log("Game Over! Result: " + win); // FIXME DEBUG
+                // Send Game over and Disconnect both sockets
                 socket.emit('end-game', win);
-                otherSocket.emit('end-game', win);
-                // Disconnect both sockets
                 socket.disconnect();
-                otherSocket.disconnect();
+                if (otherSocket) {
+                    otherSocket.emit('end-game', win);
+                    otherSocket.disconnect();
+                }
                 if (this.#endGameRunnable)
                     this.#endGameRunnable();
             }
             else {
                 // Send enable turn to the other connection.
-                console.log("It is now player " + (cTurn == 'X' ? 'O' : 'X') + " turn!");
-                otherSocket.emit('enable-turn');
+                console.log("It is now player " + (cTurn == 'X' ? 'O' : 'X') + " turn!"); // FIXME DEBUG
+                if (otherSocket)
+                    otherSocket.emit('enable-turn');
             }
         });
 
-        // TODO Handle Disconnect Properly
+        // Called when the client disconnects from the game. Just unset the respective player socket.
+        socket.on('disconnect', () => {
+            console.log('Game Session Socket disconnection'); // FIXME DEBUG
+            const connections = this.numConnections;
+            // Clear socket on disconnect
+            if (this.#player1 == socket)
+                this.#player1 = undefined;
+            else if (this.#player2 == socket)
+                this.#player2 = undefined;
+            
+            // There was only one connection, so just delete the session
+            if (connections == 1 && this.#endGameRunnable)
+                this.#endGameRunnable();
+        });
+
+        // Called when the client initializes the gameboard.
+        socket.on('fetch-board', () => {
+            console.log("Fetch board was called!"); // FIXME DEBUG
+            // Exit if no turns have been made.
+            if (this.#gameBoard.numberOfTurns == 0)
+                return;
+
+            const board = this.#gameBoard.markedBoard;
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 3; col++) {
+                    const boardMark = board[row][col];
+                    if (boardMark.length > 0)
+                        socket.emit('fill-cell', { row, col, mark: boardMark });
+                }
+            }
+        });
     }
 
     getSocket(playerNum) {
@@ -82,6 +124,15 @@ class GameSession {
             this.#player1 = socket;
         else if (playerNum == 2)
             this.#player2 = socket;
+    }
+
+    _getUnsetPlayerNum() {
+        if (!this.#player1)
+            return 1;
+        else if (!this.#player2)
+            return 2;
+        else
+            return 0;
     }
 
     onEndGame(runnable) {

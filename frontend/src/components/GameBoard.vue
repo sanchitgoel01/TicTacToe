@@ -6,9 +6,10 @@
     </h3>
     <div class="container stack">
       <template v-for="row in 3" :key="'row-' + row">
-        <div :class="'row center ' + (row > 1 ? 'top-space' : '')">
+        <div class="row center">
           <Cell
             :mark="getMark(row - 1, col - 1)"
+            :pos="[row - 1, col - 1]"
             @cell-clicked="cellClicked(row - 1, col - 1)"
             v-for="col in 3"
             :key="'cell-' + row + col"
@@ -18,9 +19,7 @@
       </template>
     </div>
     <div v-if="gameResult != 0">
-      <h3>
-        {{ gameResultMsg }}!
-      </h3>
+      <h3>{{ gameResultMsg }}!</h3>
       <!-- <button @click="resetGame">Reset!</button> -->
     </div>
   </div>
@@ -31,7 +30,7 @@ import Cell from "./Cell";
 
 export default {
   name: "GameBoard",
-  props: ['socket', 'gameCode'],
+  props: ["socket", "gameCode"],
   components: {
     Cell,
   },
@@ -51,35 +50,39 @@ export default {
   created() {
     console.log("GAMEBOARD CREATED!");
     // Set Turn at the beginning
-    this.socket.on('set-turn', (turn) => {
-      // FIXME DEBUG
-      console.log('Set turn to ' + turn);
+    this.socket.on("set-turn", (turn) => {
+      console.log("Set turn to " + turn); // FIXME DEBUG
       this.turn = turn;
     });
 
     // Enable interaction
-    this.socket.on('enable-turn', () => {
+    this.socket.on("enable-turn", () => {
       // FIXME DEBUG
-      console.log('Enabling interaction!');
+      console.log("Enabling interaction!");
       this.canInteract = true;
     });
 
-    this.socket.on('fill-cell', (data) => {
+    this.socket.on("fill-cell", (data) => {
       const row = data.row;
       const col = data.col;
+      const mark = data.mark;
       // FIXME DEBUG
-      console.log('Filling cell! Row: ' + row + ". Col:" + col);
-      const mark = this.turn == 'X' ? -1 : 1;
-      this.board[row][col] = mark;
+      console.log(
+        "Filling cell! Row: " + row + ". Col:" + col + ". Mark: " + mark
+      );
+      const markVal = mark == "X" ? 1 : -1;
+      this.board[row][col] = markVal;
     });
 
-    this.socket.on('end-game', (result) => {
+    this.socket.on("end-game", (result) => {
       console.log("Received End Game socket! Result: " + result);
       this.canInteract = false;
       this.gameResult = result;
       // Close Socket to prevent any other connections
       this.socket.close();
     });
+    // Fetch the board from the server.
+    this.socket.emit("fetch-board");
   },
   methods: {
     getMark: function (row, col) {
@@ -89,22 +92,19 @@ export default {
       else return "";
     },
     cellClicked: function (row, col) {
-      if (this.gameResult != 0 || !this.canInteract)
-        return;
+      if (this.gameResult != 0 || !this.canInteract) return;
 
       // Set board position
       this.board[row][col] = this.turn == "X" ? 1 : -1;
       // Disable interaction
       this.canInteract = false;
       // Uses current turn, so must be called before turn is changed
-      this.socket.emit('cell-clicked', { row, col });
+      this.socket.emit("cell-clicked", { row, col });
     },
     getStatusMsg() {
-      if (this.gameResult != 0)
-        return "Game Over!";
-      
-      if (!this.canInteract)
-        return "Waiting for other player..."
+      if (this.gameResult != 0) return "Game Over!";
+
+      if (!this.canInteract) return "Waiting for other player...";
 
       return "It is your turn!";
     },
@@ -125,18 +125,18 @@ export default {
   },
   computed: {
     gameResultMsg() {
-      if (this.gameResult == 0)
-        return "";
+      if (this.gameResult == 0) return "";
 
-      if ((this.gameResult == 1 && this.turn == 'X')
-          || (this.gameResult == 2 && this.turn == 'O'))
+      if (
+        (this.gameResult == 1 && this.turn == "X") ||
+        (this.gameResult == 2 && this.turn == "O")
+      )
         return "You won";
 
-      if (this.gameResult == 3)
-        return 'The game is a draw';
+      if (this.gameResult == 3) return "The game is a draw";
 
       return "You lost";
-    }
+    },
   },
 };
 </script>

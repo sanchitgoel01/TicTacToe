@@ -14,7 +14,7 @@ const gameSessions = {};
 
 // Returns random value in [min, max] (inclusive bounds).
 function getRndInteger(min, max) {
-  return Math.floor(Math.random() * (max - min + 1) ) + min;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function generateGameCode() {
@@ -29,53 +29,77 @@ function generateGameCode() {
   return charStr;
 }
 
+function unregisterSocketListeners(socket) {
+  socket.removeAllListeners('join-game');
+  socket.removeAllListeners('new-game');
+}
+
+function registerSocketListeners(socket) {
+  socket.on("join-game", gameCode => {
+    const session = gameSessions[gameCode];
+    if (!session) {
+      socket.emit('joined-game', { error:  "No game was found matching that game code!" });
+    }
+    else if (session.numConnections == 2) {
+      socket.emit('joined-game', { error:  "Game is full!" });
+    }
+    else {
+      unregisterSocketListeners(socket);
+      const sessionData = { gameCode: gameCode, numPlayers: session.numConnections };
+      socket.emit('joined-game', sessionData);
+      // Let the other player know that someone else has joined!
+      session.broadcast('joined-game', sessionData);
+      session.addConnection(socket);
+    }
+  });
+
+  socket.on('new-game', () => {
+    // First thing we do is unregister any more listeners.
+    unregisterSocketListeners(socket);
+
+    var gameCode = generateGameCode();
+    while (gameSessions[gameCode]) {
+      gameCode = generateGameCode();
+    }
+
+    const session = new GameSession();
+    gameSessions[gameCode] = session;
+    session.onEndGame(() => {
+      // Remove property
+      delete gameSessions[gameCode];
+    });
+
+    socket.emit('joined-game', { gameCode: gameCode, numPlayers: session.numConnections });
+    session.addConnection(socket);
+
+    // Add a listener for cancelling game creation
+    socket.on('cancel-creation', (gameCode) => {
+      console.log('Recieved cancel creation!'); // FIXME DEBUG
+      // Remove listener to prevent double
+      socket.removeAllListeners('cancel-creation');
+      const session = gameSessions[gameCode];
+      // No session exists.
+      if (!session)
+        return;
+  
+      // If two players are connected, it's too late to cancel.
+      if (session.numConnections == 2)
+        return;
+  
+      delete gameSessions[gameCode];
+  
+      // We must re-register all the listeners for the socket
+      registerSocketListeners(socket);
+    });
+  });
+}
 
 // GameBoard object
 io.on('connection', socket => {
-    const unregisterListeners = () => {
-      socket.removeAllListeners('join-game');
-      socket.removeAllListeners('new-game');
-    }
 
-    console.log("Socket Has Connected!");
-    // Join Game listeners
-    socket.on("join-game", gameCode => {
-      const session = gameSessions[gameCode];
-      if (!session) {
-        socket.emit('invalid-code', "No game was found matching that game code!");
-      }
-      else if (session.numConnections == 2) {
-        socket.emit('invalid-code', "Game is full!");
-      }
-      else {
-        unregisterListeners();
-        const sessionData = { gameCode: gameCode, numPlayers: session.numConnections };
-        socket.emit('joined-game', sessionData);
-        // Let the other player know that someone else has joined!
-        session.broadcast('joined-game', sessionData);
-        session.addConnection(socket);
-      }
-    });
-
-    socket.on('new-game', () => {
-      // First thing we do is unregister any more listeners.
-      unregisterListeners();
-
-      var gameCode = generateGameCode();
-      while (gameSessions[gameCode]) {
-        gameCode = generateGameCode();
-      }
-
-      const session = new GameSession();
-      gameSessions[gameCode] = session;
-      session.onEndGame(() => {
-        // Remove property
-        delete gameSessions[gameCode];
-      });
-
-      socket.emit('joined-game', { gameCode: gameCode, numPlayers: session.numConnections });
-      session.addConnection(socket);
-    });
+  console.log("Socket Has Connected!");
+  // Join Game listeners
+  registerSocketListeners(socket);
 });
 
 http.listen(3000, () => {

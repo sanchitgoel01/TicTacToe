@@ -103,7 +103,21 @@ class GameBoard {
         return this.#winner;
     }
 
+    get markedBoard() {
+        var markedBoard = [['', '', ''], ['', '', ''], ['', '', '']];
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                const boardVal = this.#board[row][col];
+                if (boardVal != 0)
+                    markedBoard[row][col] = boardVal == 1 ? 'X' : 'O';
+            }
+        }
+        return markedBoard;
+    }
 
+    get numberOfTurns() {
+        return this.#numTurns;
+    }
 }
 
 module.exports = GameBoard

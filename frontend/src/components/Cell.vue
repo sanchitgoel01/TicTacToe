@@ -1,5 +1,5 @@
 <template>
-  <div class="cell" @click="cellClick">
+  <div :class="'cell ' + borderStyle" @click="cellClick">
     <p v-if="mark.length > 0" class="unselectable">{{ mark }}</p>
   </div>
 </template>
@@ -10,6 +10,7 @@ export default {
   props: {
     mark: String,
     canInteract: Boolean,
+    pos: Array
   },
   emits: [ "cell-clicked" ],
   methods: {
@@ -17,11 +18,30 @@ export default {
         if(!this.canInteract || this.mark.length > 0)
           return;
 
-        // FIXME DEBUG
-        console.log("Cell Click Validated!");
+        console.log("Cell Click Validated!"); // FIXME DEBUG
         this.$emit('cell-clicked');
     },
   },
+  computed: {
+    // Compute borders depending on cell position
+    borderStyle() {
+      const row = this.pos[0];
+      const col = this.pos[1];
+
+      let style = "";
+
+      // Check if center
+      if (col == 1) {
+        style += "bord-left bord-right";
+      }
+
+      if (row != 2) {
+        style += " bord-down";
+      }
+
+      return style;
+    }
+  }
 };
 </script>
 
@@ -36,8 +56,21 @@ p {
 .cell {
   height: 100px;
   width: 100px;
-  border: 5px solid green;
-  margin-left: 1px;
-  margin-right: 1px;
+}
+
+.bord-left {
+  border-left: 5px solid green; 
+}
+
+.bord-right {
+  border-right: 5px solid green;
+}
+
+.bord-down {
+  border-bottom: 5px solid green;
+}
+
+.bord-up {
+  border-top: 5px solid green;
 }
 </style>
