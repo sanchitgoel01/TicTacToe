@@ -11,6 +11,12 @@ import GameBoard from "./components/GameBoard.vue";
 import SessionManager from "./components/SessionManager.vue";
 import io from "socket.io-client";
 
+var socketURL = '/';
+
+// If development, use localhost:3000 since node server and front-end run separately.
+if (process.env.NODE_ENV == 'development')
+  socketURL = 'http://localhost:3000';
+
 export default {
   name: "App",
   components: {
@@ -19,8 +25,9 @@ export default {
   },
   data() {
     return {
-      socket: io("http://localhost:3000", {
+      socket: io(socketURL, {
         withCredentials: true,
+        autoConnect: false,
       }),
       inGame: false,
       gameCode: "",

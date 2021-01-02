@@ -24,7 +24,6 @@ class GameSession {
         this._setPlayer(playerNum, socket);
 
         const cTurn = playerNum == 1 ? 'X' : 'O';
-        socket.emit('set-turn', cTurn);
 
         this._initSocketListeners(socket, cTurn, playerNum);
 
@@ -42,8 +41,6 @@ class GameSession {
     _initSocketListeners(socket, cTurn, playerNum) {
         // Called when a client clicks on a cell on the board.
         socket.on('cell-clicked', (data) => {
-            console.log("Recieved Cell Clicked!"); // FIXME DEBUG
-
             // Validate click
             if (this.#gameBoard.isGameOver || this.#gameBoard.currentTurn != cTurn) {
                 console.log("Error: " + cTurn + " sent a cell-click at the wrong time. Ignoring!");
@@ -53,7 +50,6 @@ class GameSession {
             const row = data.row;
             const col = data.col;
 
-            console.log("Cell Pos Row: " + row + ". Col: " + col); // FIXME DEBUG
             const otherSocket = playerNum == 1 ? this.#player2 : this.#player1; // If client turn is 1, we want 2 socket.
 
             this.#gameBoard.cellClicked(row, col);
@@ -62,7 +58,6 @@ class GameSession {
 
             if (this.#gameBoard.isGameOver) {
                 const win = this.#gameBoard.rawWin;
-                console.log("Game Over! Result: " + win); // FIXME DEBUG
                 // Send Game over and Disconnect both sockets
                 socket.emit('end-game', win);
                 socket.disconnect();
@@ -75,7 +70,6 @@ class GameSession {
             }
             else {
                 // Send enable turn to the other connection.
-                console.log("It is now player " + (cTurn == 'X' ? 'O' : 'X') + " turn!"); // FIXME DEBUG
                 if (otherSocket)
                     otherSocket.emit('enable-turn');
             }
@@ -83,7 +77,6 @@ class GameSession {
 
         // Called when the client disconnects from the game. Just unset the respective player socket.
         socket.on('disconnect', () => {
-            console.log('Game Session Socket disconnection'); // FIXME DEBUG
             const connections = this.numConnections;
             // Clear socket on disconnect
             if (this.#player1 == socket)
@@ -98,7 +91,6 @@ class GameSession {
 
         // Called when the client initializes the gameboard.
         socket.on('fetch-board', () => {
-            console.log("Fetch board was called!"); // FIXME DEBUG
             // Exit if no turns have been made.
             if (this.#gameBoard.numberOfTurns == 0)
                 return;
@@ -111,6 +103,10 @@ class GameSession {
                         socket.emit('fill-cell', { row, col, mark: boardMark });
                 }
             }
+        });
+
+        socket.on('fetch-mark', (callback) => {
+            callback({ mark: cTurn });
         });
     }
 

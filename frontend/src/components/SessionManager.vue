@@ -9,11 +9,11 @@
         </button>
       </div>
       <div class="flex container stack mx-auto w-25p" v-else>
-        <p>Game Code:</p>
-        <input v-model="gameCodeInput" />
-        <button class="mt-2 h-3rm" @click="onJoinGameClck()">Join</button>
+        <h3>Game Code:</h3>
+        <input id="codeInput" v-model="gameCodeInput" />
+        <button class="mt-3 session-btn" @click="onJoinGameClck()">Join</button>
         <button
-          class="mt-2 h-3rm"
+          class="mt-2 session-btn"
           @click="
             showJoinGameInput = false;
             error = '';
@@ -27,7 +27,9 @@
     <div v-else class="flex container stack mx-auto w-25p">
       <h3>Game Code: {{ gameCode.toUpperCase() }}</h3>
       <h3>Waiting for another player to join...</h3>
-      <button class="h-3rm" @click="onCancelGameClck()">Cancel Game</button>
+      <button class="session-btn" @click="onCancelGameClck()">
+        Cancel Game
+      </button>
     </div>
   </div>
 </template>
@@ -53,8 +55,6 @@ export default {
         return;
       }
 
-      console.log("A client joined the game!"); // FIXME DEBUG
-      console.log("Game Code:" + data.gameCode); // FIXME DEBUG
       this.gameCodeInput = "";
       this.gameCode = data.gameCode;
       if (data.numPlayers < 1) {
@@ -67,19 +67,22 @@ export default {
   },
   methods: {
     newGame() {
-      console.log("Create a new game!"); // FIXME DEBUG
+      if (!this.socket.connected)
+        this.socket.open();
+      
       this.socket.emit("new-game");
     },
     onJoinGameClck() {
-      console.log("Game Code Input: " + this.gameCodeInput); // FIXME DEUBG
-
       if (this.gameCodeInput.length == 0) return;
+
+      if (!this.socket.connected)
+        this.socket.open();
 
       this.socket.emit("join-game", this.gameCodeInput.toLowerCase());
     },
     onCancelGameClck() {
       // Tell server to cancel new game
-      this.socket.emit('cancel-creation', this.gameCode);
+      this.socket.emit("cancel-creation", this.gameCode);
       // Reset game code and waiting state.
       this.gameCode = "";
       this.isWaiting = false;
@@ -90,7 +93,18 @@ export default {
 
 <style scoped>
 .session-btn {
-  height: 3rem;
-  border-radius: 2%;
+  height: 3.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-family: "Verdana";
+  background-color: #4caf50;
+  color: white;
+}
+
+#codeInput {
+  width: 50%;
+  height: 1.25rem;
+  text-align: center;
+  margin: auto;
 }
 </style>

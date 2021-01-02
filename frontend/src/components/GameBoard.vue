@@ -1,6 +1,9 @@
 <template>
   <div id="gameboard">
-    <h5>Game Code: {{ gameCode }}</h5>
+    <p style="font-size: 0.75rem">
+      Game Code: <b>{{ gameCode }}</b> <br><br>
+      You are playing as <b>{{ turn }}</b>!
+    </p>
     <h3>
       {{ getStatusMsg() }}
     </h3>
@@ -20,7 +23,7 @@
     </div>
     <div v-if="gameResult != 0">
       <h3>{{ gameResultMsg }}!</h3>
-      <!-- <button @click="resetGame">Reset!</button> -->
+      <p>Please refresh the page to create / join another game!</p>
     </div>
   </div>
 </template>
@@ -48,17 +51,8 @@ export default {
     };
   },
   created() {
-    console.log("GAMEBOARD CREATED!");
-    // Set Turn at the beginning
-    this.socket.on("set-turn", (turn) => {
-      console.log("Set turn to " + turn); // FIXME DEBUG
-      this.turn = turn;
-    });
-
     // Enable interaction
     this.socket.on("enable-turn", () => {
-      // FIXME DEBUG
-      console.log("Enabling interaction!");
       this.canInteract = true;
     });
 
@@ -66,16 +60,12 @@ export default {
       const row = data.row;
       const col = data.col;
       const mark = data.mark;
-      // FIXME DEBUG
-      console.log(
-        "Filling cell! Row: " + row + ". Col:" + col + ". Mark: " + mark
-      );
+
       const markVal = mark == "X" ? 1 : -1;
       this.board[row][col] = markVal;
     });
 
     this.socket.on("end-game", (result) => {
-      console.log("Received End Game socket! Result: " + result);
       this.canInteract = false;
       this.gameResult = result;
       // Close Socket to prevent any other connections
@@ -83,6 +73,10 @@ export default {
     });
     // Fetch the board from the server.
     this.socket.emit("fetch-board");
+    // Fetch the mark from the server.
+    this.socket.emit("fetch-mark", (data) => {
+      this.turn = data.mark;
+    });
   },
   methods: {
     getMark: function (row, col) {

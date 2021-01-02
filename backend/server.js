@@ -1,6 +1,10 @@
 const GameSession = require('./GameSession.js');
-var app = require('express')();
+const express = require('express');
+var app = express();
 var http = require('http').createServer(app);
+
+// Load .env file
+require('dotenv').config();
 
 const io = require('socket.io')(http, {
   cors: {
@@ -74,7 +78,6 @@ function registerSocketListeners(socket) {
 
     // Add a listener for cancelling game creation
     socket.on('cancel-creation', (gameCode) => {
-      console.log('Recieved cancel creation!'); // FIXME DEBUG
       // Remove listener to prevent double
       socket.removeAllListeners('cancel-creation');
       const session = gameSessions[gameCode];
@@ -96,12 +99,15 @@ function registerSocketListeners(socket) {
 
 // GameBoard object
 io.on('connection', socket => {
-
-  console.log("Socket Has Connected!");
   // Join Game listeners
   registerSocketListeners(socket);
 });
 
 http.listen(3000, () => {
-  console.log('listening on *:3000');
+  console.log('Listening on *:3000');
 });
+
+if (process.env.NODE_ENV.toLowerCase() == 'prod' || process.env.NODE_ENV.toLowerCase() == 'prod') {
+  const staticFileMiddleware = express.static('dist');
+  app.use(staticFileMiddleware);
+}

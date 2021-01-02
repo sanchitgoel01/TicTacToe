@@ -18,7 +18,6 @@ export default {
         if(!this.canInteract || this.mark.length > 0)
           return;
 
-        console.log("Cell Click Validated!"); // FIXME DEBUG
         this.$emit('cell-clicked');
     },
   },

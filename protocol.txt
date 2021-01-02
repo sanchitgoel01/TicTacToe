@@ -7,7 +7,6 @@ CLIENT PROTOCOL:
             Also contains error message if there was an error joining the game.
         - Fill-Cell: Recieved when the other player clicks a cell. Contains Row/Col pos, and mark (X or O).
         - End-Game: Recieved when the game is over. Contains data: 0, 1, 2, 3 representing Left Match, X Win, O Win, and Draw respectively.
-        - Set-Turn: Recieved at the start when a socket connection is made. Contains turn which is either X or O
         - Enable-Turn: Recieved when a player can select their mark.
 
     Outgoing:
@@ -15,3 +14,4 @@ CLIENT PROTOCOL:
         New-Game: Triggered when a client wants to create a new game.
         Join-Game: Triggered when a client wants to join a game.
         Fetch-Board: Triggered when a client wants to fetch the board.
+        Fetch-Mark: Triggered when a client wants to know what mark (X or O) they are. Contains callback function.
