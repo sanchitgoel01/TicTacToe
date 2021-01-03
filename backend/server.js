@@ -103,11 +103,15 @@ io.on('connection', socket => {
   registerSocketListeners(socket);
 });
 
-http.listen(3000, () => {
-  console.log('Listening on *:3000');
+// Heroku does not bind to 3000, so read the port if set.
+const port = process.env.PORT || 3000;
+http.listen(port, () => {
+  console.log('Listening on port ' + port);
 });
 
-if (process.env.NODE_ENV.toLowerCase() == 'prod' || process.env.NODE_ENV.toLowerCase() == 'prod') {
+const NODE_ENV = (process.env.NODE_ENV || 'development').toLowerCase();
+console.log("Running in " + NODE_ENV + " environment!");
+if (NODE_ENV == 'production' || NODE_ENV == 'prod') {
   const staticFileMiddleware = express.static('dist');
   app.use(staticFileMiddleware);
 }

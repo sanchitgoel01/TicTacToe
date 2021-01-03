@@ -1,1 +1,3 @@
-- Cleanup formatting
+- Add rematch feature
+- Add nickname feature
+- Add timeout feature
