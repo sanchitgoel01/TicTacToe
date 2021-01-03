@@ -40,6 +40,7 @@ export default {
   props: ["socket"],
   data() {
     return {
+      attemptedConnection: false, // Used to prevent sending duplicate requests
       showJoinGameInput: false,
       isWaiting: false,
       gameCodeInput: "", // Game code Input
@@ -50,6 +51,7 @@ export default {
   emits: ["enter-game"],
   created() {
     this.socket.on("joined-game", (data) => {
+      this.attemptedConnection = false;
       if (data.error) {
         this.error = data.error;
         return;
@@ -67,13 +69,25 @@ export default {
   },
   methods: {
     newGame() {
+      // Prevent double sending
+      if (this.attemptedConnection)
+        return;
+
+      this.attemptedConnection = true;
+
       if (!this.socket.connected)
         this.socket.open();
       
       this.socket.emit("new-game");
     },
     onJoinGameClck() {
+      // Prevent double connection
+      if (this.attemptedConnection)
+        return;
+
       if (this.gameCodeInput.length == 0) return;
+
+      this.attemptedConnection = true;
 
       if (!this.socket.connected)
         this.socket.open();

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1>Tic-Tac-Toe</h1>
+    <h1>2-Player Online Tic-Tac-Toe</h1>
     <SessionManager v-if="!inGame" :socket="socket" @enter-game="enterGame" />
     <GameBoard :socket="socket" :gameCode="gameCode" v-else />
   </div>

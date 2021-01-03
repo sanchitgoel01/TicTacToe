@@ -7,6 +7,7 @@ class GameSession {
     #player1 = undefined; // Socket
     #player2 = undefined; // Socket
     #endGameRunnable = undefined; // Function
+    #rematchRequests = 0;
 
     addConnection(socket) {
         const numConnections = this.numConnections;
@@ -50,7 +51,7 @@ class GameSession {
             const row = data.row;
             const col = data.col;
 
-            const otherSocket = playerNum == 1 ? this.#player2 : this.#player1; // If client turn is 1, we want 2 socket.
+            const otherSocket = this._getOpponentSocket(playerNum);
 
             this.#gameBoard.cellClicked(row, col);
             if (otherSocket)
@@ -58,15 +59,13 @@ class GameSession {
 
             if (this.#gameBoard.isGameOver) {
                 const win = this.#gameBoard.rawWin;
-                // Send Game over and Disconnect both sockets
+                // Send game over
                 socket.emit('end-game', win);
-                socket.disconnect();
+                this._initRematchListener(socket, playerNum);
                 if (otherSocket) {
                     otherSocket.emit('end-game', win);
-                    otherSocket.disconnect();
+                    this._initRematchListener(otherSocket, playerNum == 1 ? 2 : 1);
                 }
-                if (this.#endGameRunnable)
-                    this.#endGameRunnable();
             }
             else {
                 // Send enable turn to the other connection.
@@ -83,10 +82,11 @@ class GameSession {
                 this.#player1 = undefined;
             else if (this.#player2 == socket)
                 this.#player2 = undefined;
-            
+
             // There was only one connection, so just delete the session
-            if (connections == 1 && this.#endGameRunnable)
+            if (connections == 1 && this.#endGameRunnable) {
                 this.#endGameRunnable();
+            }
         });
 
         // Called when the client initializes the gameboard.
@@ -105,13 +105,54 @@ class GameSession {
             }
         });
 
-        socket.on('fetch-mark', (callback) => {
-            callback({ mark: cTurn });
+        socket.on('fetch-data', (callback) => {
+            callback({ mark: cTurn, gameResult: this.#gameBoard.rawWin });
         });
+    }
+
+    _initRematchListener(socket, playerNum) {
+        socket.on('request-rematch', (callback) => {
+            this._removeListener(socket, 'request-rematch');
+            const connections = this.numConnections;
+            if (connections != 2) {
+                callback('invalid');
+                return;
+            }
+
+            const otherSocket = this._getOpponentSocket(playerNum);
+            // Make sure other socket is valid.
+            if (!otherSocket) {
+                callback('invalid');
+                return;
+            }
+
+            // There is already a rematch request
+            if (this.#rematchRequests == 1) {
+                this.#gameBoard = new GameBoard();
+                socket.emit('reset-game');
+                otherSocket.emit('reset-game');
+                this.#rematchRequests = 0;
+                // Enable Turn for X
+                this.getSocket(1).emit('enable-turn');
+            }
+            else {
+                this.#rematchRequests++;
+                callback('received');
+                otherSocket.emit('rematch-requested');
+            }
+        });
+    }
+
+    _removeListener(socket, messageName) {
+        socket.removeAllListeners(messageName);
     }
 
     getSocket(playerNum) {
         return playerNum == 1 ? this.#player1 : this.#player2;
+    }
+
+    _getOpponentSocket(playerNum) {
+        return playerNum == 1 ? this.#player2 : this.#player1;
     }
 
     _setPlayer(playerNum, socket) {

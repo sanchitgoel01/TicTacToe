@@ -23,19 +23,21 @@
     </div>
     <div v-if="gameResult != 0">
       <h3>{{ gameResultMsg }}!</h3>
-      <p>Please refresh the page to create / join another game!</p>
+      <RematchButton :socket="socket" @rematch="resetGame()" />
     </div>
   </div>
 </template>
 
 <script>
 import Cell from "./Cell";
+import RematchButton from "./RematchButton";
 
 export default {
   name: "GameBoard",
   props: ["socket", "gameCode"],
   components: {
     Cell,
+    RematchButton,
   },
   data: function () {
     return {
@@ -68,14 +70,13 @@ export default {
     this.socket.on("end-game", (result) => {
       this.canInteract = false;
       this.gameResult = result;
-      // Close Socket to prevent any other connections
-      this.socket.close();
     });
     // Fetch the board from the server.
     this.socket.emit("fetch-board");
-    // Fetch the mark from the server.
-    this.socket.emit("fetch-mark", (data) => {
+    // Fetch the game data from the server.
+    this.socket.emit("fetch-data", (data) => {
       this.turn = data.mark;
+      this.gameResult = data.gameResult;
     });
   },
   methods: {
@@ -110,11 +111,6 @@ export default {
           this.board[iRow][iCol] = 0;
         }
       }
-      // Reset turns
-      this.numTurns = 0;
-      // Reset turn
-      this.turn = "X";
-      this.isRunning = true;
     },
   },
   computed: {

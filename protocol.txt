@@ -1,17 +1,22 @@
 Protocol Design:
+This file details all the socket message interactions between
+the client and server, as well as how they should be used.
+The message names are implemented in lowercase kebab case (e.g. 'message-name').
 
 CLIENT PROTOCOL:
-
     Incoming:
         - Joined Game: Recieved when the server acknowledges that a client joined a game. Contains gamecode and numPlayers. 
             Also contains error message if there was an error joining the game.
         - Fill-Cell: Recieved when the other player clicks a cell. Contains Row/Col pos, and mark (X or O).
         - End-Game: Recieved when the game is over. Contains data: 0, 1, 2, 3 representing Left Match, X Win, O Win, and Draw respectively.
         - Enable-Turn: Recieved when a player can select their mark.
+        - Reset-Game: Recieved when a rematch occurs. Should reset the client's board.
+        - Rematch-Requested: Recieved when a rematch has been requested. Should change the rematch button text.
 
     Outgoing:
         Cell-Clicked: Triggered when a cell is clicked client side. Sends Row/Col pos of the cell that was clicked.
         New-Game: Triggered when a client wants to create a new game.
         Join-Game: Triggered when a client wants to join a game.
         Fetch-Board: Triggered when a client wants to fetch the board.
-        Fetch-Mark: Triggered when a client wants to know what mark (X or O) they are. Contains callback function.
+        Fetch-Data: Triggered when a client wants to get the game data. Contains callback function with { mark, gameResult, rematchRequested }
+        Request-Rematch: Triggered when a client wants to request a rematch. Callback contains 'invalid' or 'receieved'
