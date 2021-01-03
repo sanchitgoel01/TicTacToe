@@ -56,7 +56,7 @@ class GameBoard {
 
         if (hasWon) return true;
 
-        if (row == col) {
+        if (row == col || (row == (2 - col))) {
             // Check diagnol and counter-diagnol
             hasWon = true;
             for (var diag = 0; diag < 3; diag++) {
