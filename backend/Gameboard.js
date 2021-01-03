@@ -56,23 +56,31 @@ class GameBoard {
 
         if (hasWon) return true;
 
-        if (row == col || (row == (2 - col))) {
-            // Check diagnol and counter-diagnol
+        // Check diagnol
+        if (row == col) {
             hasWon = true;
             for (var diag = 0; diag < 3; diag++) {
-                if (
-                    this.#board[diag][diag] != side &&
-                    this.#board[diag][2 - diag] != side
-                ) {
+                if (this.#board[diag][diag] != side) {
                     hasWon = false;
                     break;
                 }
             }
-
-            return hasWon;
         }
 
-        return false;
+        if (hasWon) return true;
+
+        // Check counter diagnol
+        if (row == (2 - col)) {
+            hasWon = true;
+            for (var diag = 0; diag < 3; diag++) {
+                if (this.#board[diag][2 - diag] != side) {
+                    hasWon = false;
+                    break;
+                }
+            }
+        }
+
+        return hasWon;
     }
 
     reset() {
