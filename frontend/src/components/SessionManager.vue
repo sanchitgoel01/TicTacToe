@@ -1,14 +1,17 @@
 <template>
   <!-- Template Wrapper -->
   <div>
-    <div v-if="!isWaiting">
-      <div class="flex container stack mx-auto w-25p" v-if="!showJoinGameInput">
-        <button class="session-btn" @click="newGame()">New Game</button>
-        <button class="mt-3 session-btn" @click="showJoinGameInput = true">
-          Join Game
+    <div id="session-menu" class="flex container stack mx-auto">
+      <!-- New Game Waiting State -->
+      <template v-if="isWaiting">
+        <h3>Game Code: {{ gameCode.toUpperCase() }}</h3>
+        <h3>Waiting for another player to join...</h3>
+        <button class="session-btn" @click="onCancelGameClck()">
+          Cancel Game
         </button>
-      </div>
-      <div class="flex container stack mx-auto w-25p" v-else>
+      </template>
+      <!-- Join Game State -->
+      <template v-else-if="showJoinGameInput">
         <h3>Game Code:</h3>
         <input id="codeInput" v-model="gameCodeInput" />
         <button class="mt-3 session-btn" @click="onJoinGameClck()">Join</button>
@@ -21,15 +24,14 @@
         >
           Cancel
         </button>
-      </div>
-      <p v-if="error != ''">Error: {{ error }}</p>
-    </div>
-    <div v-else class="flex container stack mx-auto w-25p">
-      <h3>Game Code: {{ gameCode.toUpperCase() }}</h3>
-      <h3>Waiting for another player to join...</h3>
-      <button class="session-btn" @click="onCancelGameClck()">
-        Cancel Game
-      </button>
+      </template>
+      <!-- Main Menu State-->
+      <template v-else>
+        <button class="session-btn" @click="newGame()">New Game</button>
+        <button class="mt-3 session-btn" @click="showJoinGameInput = true">
+          Join Game
+        </button>
+      </template>
     </div>
   </div>
 </template>
@@ -70,27 +72,22 @@ export default {
   methods: {
     newGame() {
       // Prevent double sending
-      if (this.attemptedConnection)
-        return;
+      if (this.attemptedConnection) return;
 
       this.attemptedConnection = true;
 
-      if (!this.socket.connected)
-        this.socket.open();
-      
+      if (!this.socket.connected) this.socket.open();
+
       this.socket.emit("new-game");
     },
     onJoinGameClck() {
       // Prevent double connection
-      if (this.attemptedConnection)
-        return;
-
-      if (this.gameCodeInput.length == 0) return;
+      if (this.attemptedConnection
+          || this.gameCodeInput.length == 0) return;
 
       this.attemptedConnection = true;
 
-      if (!this.socket.connected)
-        this.socket.open();
+      if (!this.socket.connected) this.socket.open();
 
       this.socket.emit("join-game", this.gameCodeInput.toLowerCase());
     },
@@ -106,6 +103,19 @@ export default {
 </script>
 
 <style scoped>
+/* Increase width on mobile screens */
+@media (min-width: 768px) {
+  #session-menu {
+    width: 25%;
+  }
+}
+
+@media (max-width: 768px) {
+  #session-menu {
+    width: 75%;
+  }
+}
+
 .session-btn {
   height: 3.25rem;
   border-radius: 0.5rem;
