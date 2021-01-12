@@ -26,7 +26,7 @@ jobs:
 
       # Install node modules in front-end
       - name: Install Frontend Modules
-        run: yarn install --frozen-lockfile
+        run: yarn install
         shell: bash
         working-directory: ./frontend
 
