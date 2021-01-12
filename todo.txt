@@ -1,1 +1,0 @@
-- Add nickname feature so people can see who they are playing against.
