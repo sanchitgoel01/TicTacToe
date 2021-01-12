@@ -25,17 +25,17 @@ jobs:
           fail-fast: true
 
       # Install node modules in front-end
-      - name: NPM Clean Install
-        run: npm ci
+      - name: Install Frontend Modules
+        run: yarn install --frozen-lockfile
         shell: bash
         working-directory: ./frontend
 
       # Build distribution in front-end
-      - name: NPM Build
+      - name: Build Frontend
         env:
           CI: false
           NODE_ENV: production
-        run: npm run build
+        run: yarn build
         shell: bash
         working-directory: ./frontend
 
